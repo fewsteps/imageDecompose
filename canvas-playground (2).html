@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canvas Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,700;1,300&family=DM+Mono:wght@300;400&family=Bricolage+Grotesque:wght@300;400;500;700&family=Lora:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ═══════════════════════════════════════════
+   THEMES
+═══════════════════════════════════════════ */
+:root, [data-theme="void"] {
+  --bg: #0a090e;
+  --bg2: #100f18;
+  --surface: rgba(255,255,255,0.04);
+  --surface2: rgba(255,255,255,0.07);
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #e8e4f0;
+  --text2: #9892ab;
+  --text3: #5f5a72;
+  --accent: #c084fc;
+  --accent2: #818cf8;
+  --accent3: #34d399;
+  --card-bg: rgba(22,18,38,0.82);
+  --card-border: rgba(255,255,255,0.12);
+  --card-hover-border: rgba(192,132,252,0.35);
+  --sidebar-bg: linear-gradient(170deg,rgba(22,18,38,0.97) 0%,rgba(14,12,24,0.98) 100%);
+  --header-grad: linear-gradient(135deg,#c084fc 0%,#818cf8 60%,#f9a8d4 100%);
+  --orb1: 270; --orb2: 240; --orb3: 160; --orb4: 290; --orb5: 220;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Bricolage Grotesque', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+[data-theme="paper"] {
+  --bg: #f5f0e8;
+  --bg2: #ede8df;
+  --surface: rgba(0,0,0,0.04);
+  --surface2: rgba(0,0,0,0.07);
+  --border: rgba(0,0,0,0.1);
+  --border2: rgba(0,0,0,0.18);
+  --text: #1a1612;
+  --text2: #6b6358;
+  --text3: #a09487;
+  --accent: #b45309;
+  --accent2: #7c3aed;
+  --accent3: #047857;
+  --card-bg: rgba(255,252,245,0.9);
+  --card-border: rgba(0,0,0,0.14);
+  --card-hover-border: rgba(180,83,9,0.4);
+  --sidebar-bg: linear-gradient(170deg,rgba(240,234,224,0.98) 0%,rgba(230,224,213,0.99) 100%);
+  --header-grad: linear-gradient(135deg,#b45309 0%,#7c3aed 60%,#b45309 100%);
+  --orb1: 35; --orb2: 270; --orb3: 150; --orb4: 45; --orb5: 260;
+  --font-display: 'Lora', Georgia, serif;
+  --font-body: 'Bricolage Grotesque', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+[data-theme="mint"] {
+  --bg: #0d1a16;
+  --bg2: #111f1a;
+  --surface: rgba(52,211,153,0.05);
+  --surface2: rgba(52,211,153,0.09);
+  --border: rgba(52,211,153,0.1);
+  --border2: rgba(52,211,153,0.2);
+  --text: #d4ede6;
+  --text2: #7abaaa;
+  --text3: #3d7a6a;
+  --accent: #34d399;
+  --accent2: #6ee7b7;
+  --accent3: #f0abfc;
+  --card-bg: rgba(13,30,24,0.85);
+  --card-border: rgba(52,211,153,0.15);
+  --card-hover-border: rgba(52,211,153,0.4);
+  --sidebar-bg: linear-gradient(170deg,rgba(15,28,22,0.97) 0%,rgba(10,20,16,0.98) 100%);
+  --header-grad: linear-gradient(135deg,#34d399 0%,#6ee7b7 50%,#f0abfc 100%);
+  --orb1: 160; --orb2: 150; --orb3: 290; --orb4: 170; --orb5: 300;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Bricolage Grotesque', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  transition: background 0.4s, color 0.3s;
+}
+
+#bg-canvas {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+#app {
+  display: flex;
+  height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* ═══ SIDEBAR ═══ */
+#sidebar {
+  width: 310px; min-width: 310px;
+  height: 100vh;
+  display: flex; flex-direction: column;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border2);
+  backdrop-filter: blur(20px);
+  z-index: 100; overflow: hidden;
+  box-shadow: 4px 0 40px rgba(0,0,0,0.3);
+  transition: background 0.4s, border-color 0.3s;
+}
+
+/* ═══ SIDEBAR COLLAPSE ═══ */
+#sidebar {
+  transition: width 0.32s cubic-bezier(.4,0,.2,1), min-width 0.32s cubic-bezier(.4,0,.2,1), box-shadow 0.32s;
+}
+#sidebar.collapsed {
+  width: 0 !important;
+  min-width: 0 !important;
+  border-right: none !important;
+  box-shadow: none !important;
+}
+#sidebar.collapsed > * { pointer-events: none; }
+
+#text-section, #image-section {
+  max-height: 500px;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.25s, padding-top 0.3s, padding-bottom 0.3s;
+}
+#text-section.panel-hidden, #image-section.panel-hidden {
+  max-height: 0 !important;
+  opacity: 0;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+#sidebar-header {
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+#sidebar-header h1 {
+  font-family: var(--font-display);
+  font-size: 20px; font-weight: 300; font-style: italic;
+  background: var(--header-grad);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.15; margin-bottom: 3px;
+}
+
+#sidebar-header p {
+  font-size: 10.5px; color: var(--text3);
+  font-family: var(--font-mono); letter-spacing: 0.04em;
+}
+
+/* ═══ TEXT SECTION ═══ */
+#text-section {
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.section-label {
+  display: block; font-size: 9.5px;
+  font-family: var(--font-mono);
+  color: var(--text3); letter-spacing: 0.1em;
+  text-transform: uppercase; margin-bottom: 9px;
+}
+
+#text-input {
+  width: 100%; min-height: 90px; max-height: 160px;
+  resize: vertical;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: var(--font-mono); font-size: 12px;
+  line-height: 1.7; padding: 9px 11px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  caret-color: var(--accent);
+}
+
+#text-input:focus {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+#text-input::placeholder { color: var(--text3); }
+
+#text-actions { display: flex; gap: 7px; margin-top: 9px; }
+
+.btn {
+  flex: 1; padding: 7px 10px;
+  border-radius: 8px; border: 1px solid var(--border2);
+  background: var(--surface2); color: var(--text2);
+  font-family: var(--font-body); font-size: 11.5px;
+  font-weight: 500; cursor: pointer;
+  transition: all 0.18s; letter-spacing: 0.02em;
+}
+.btn:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--text); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+.btn:active { transform: scale(0.97); }
+
+.btn-accent {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--accent);
+}
+.btn-accent:hover { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+
+/* ═══ IMAGE SECTION ═══ */
+#image-section {
+  padding: 12px 18px 11px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+#image-drop-zone {
+  border: 1.5px dashed var(--border2);
+  border-radius: 8px; padding: 14px 12px;
+  text-align: center; cursor: pointer;
+  transition: all 0.2s; color: var(--text3); font-size: 11.5px;
+}
+#image-drop-zone:hover, #image-drop-zone.drag-over {
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  color: var(--text2);
+}
+#image-drop-zone .drop-icon { font-size: 20px; margin-bottom: 3px; }
+#file-input { display: none; }
+
+/* ═══ SIDEBAR ITEMS ═══ */
+#sidebar-items {
+  flex: 1; overflow-y: auto;
+  padding: 10px 18px 12px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+#sidebar-items::-webkit-scrollbar { width: 3px; }
+#sidebar-items::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+.sidebar-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 11px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; cursor: grab;
+  transition: all 0.18s; color: var(--text2);
+  user-select: none; position: relative; overflow: hidden;
+}
+.sidebar-item::before {
+  content: ''; position: absolute;
+  left: 0; top: 0; bottom: 0; width: 2px;
+  background: linear-gradient(to bottom, var(--accent), var(--accent2));
+  opacity: 0; transition: opacity 0.2s;
+}
+.sidebar-item:hover { background: var(--surface2); border-color: var(--border2); color: var(--text); transform: translateX(2px); }
+.sidebar-item:hover::before { opacity: 1; }
+.sidebar-item:active { cursor: grabbing; opacity: 0.6; }
+
+.item-thumb { width: 26px; height: 26px; border-radius: 5px; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border); }
+.item-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex-shrink: 0; opacity: 0.5; }
+.item-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); font-size: 11px; }
+.item-remove { opacity: 0; cursor: pointer; color: var(--text3); font-size: 13px; padding: 2px 4px; border-radius: 4px; transition: all 0.15s; flex-shrink: 0; }
+.sidebar-item:hover .item-remove { opacity: 1; }
+.item-remove:hover { color: #f87171; background: rgba(248,113,113,0.12); }
+
+/* ═══ SIDEBAR FOOTER ═══ */
+#sidebar-footer {
+  padding: 10px 18px 12px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* ─ Icon toolbar row ─ */
+#icon-toolbar {
+  display: flex; align-items: center; gap: 4px;
+  margin-bottom: 9px;
+  padding: 5px 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+
+.icon-btn {
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 7px; cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent; color: var(--text3);
+  font-size: 14px; transition: all 0.17s;
+  position: relative; flex-shrink: 0;
+}
+.icon-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+.icon-btn.active { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+.icon-btn:active { transform: scale(0.93); }
+
+.icon-sep { width: 1px; height: 18px; background: var(--border2); margin: 0 2px; flex-shrink: 0; }
+
+/* Theme dot buttons */
+.theme-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.18s; flex-shrink: 0;
+  display: inline-block;
+}
+.theme-dot:hover { transform: scale(1.25); }
+.theme-dot.active { border-color: var(--text); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent); }
+
+#theme-dot-void  { background: radial-gradient(circle at 35% 35%, #c084fc, #0a090e); }
+#theme-dot-paper { background: radial-gradient(circle at 35% 35%, #b45309, #f5f0e8); }
+#theme-dot-mint  { background: radial-gradient(circle at 35% 35%, #34d399, #0d1a16); }
+
+/* Tooltip */
+.icon-btn[data-tip]:hover::after, .theme-dot[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 6px); left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10,9,14,0.9); border: 1px solid var(--border2);
+  color: var(--text); font-size: 10px; font-family: var(--font-mono);
+  padding: 3px 7px; border-radius: 5px;
+  white-space: nowrap; pointer-events: none; z-index: 999;
+  letter-spacing: 0.04em;
+}
+
+#footer-actions { display: flex; gap: 7px; }
+
+/* ═══ WORKSPACE ═══ */
+#workspace {
+  flex: 1; height: 100vh;
+  position: relative; overflow: hidden;
+}
+
+#canvas-bg {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 50%, color-mix(in srgb, var(--accent) 8%, transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 60% at 80% 30%, color-mix(in srgb, var(--accent2) 6%, transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 40% at 60% 80%, color-mix(in srgb, var(--accent3) 5%, transparent) 0%, transparent 70%);
+  pointer-events: none;
+  transition: background 0.5s;
+}
+
+#workspace::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--text) 8%, transparent) 1px, transparent 1px);
+  background-size: 36px 36px;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.3s;
+}
+#workspace.no-grid::before {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#drop-hint {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center; pointer-events: none;
+  transition: opacity 0.4s;
+}
+#drop-hint .hint-icon { font-size: 46px; margin-bottom: 10px; opacity: 0.1; line-height: 1; }
+#drop-hint p { color: var(--text3); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.06em; opacity: 0.45; line-height: 1.9; }
+
+/* ═══ CANVAS CARDS ═══ */
+.canvas-card {
+  position: absolute; cursor: grab;
+  user-select: none; touch-action: none;
+  will-change: transform;
+}
+.canvas-card:active { cursor: grabbing; }
+
+.card-inner {
+  position: relative; padding: 13px 15px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 13px;
+  backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.06) inset;
+  min-width: 90px; max-width: 230px;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  overflow: hidden;
+}
+.card-inner::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 55%);
+  pointer-events: none; border-radius: inherit;
+}
+.canvas-card:hover .card-inner { border-color: var(--card-hover-border); box-shadow: 0 12px 44px rgba(0,0,0,0.35), 0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent), 0 1px 0 rgba(255,255,255,0.07) inset; }
+.canvas-card.dragging-card .card-inner { border-color: color-mix(in srgb, var(--accent) 55%, transparent); box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent); transform: scale(1.04) rotate(1deg); }
+
+.card-text { font-family: var(--font-body); font-size: 13px; color: var(--text); line-height: 1.55; word-break: break-word; white-space: pre-wrap; }
+.card-image { max-width: 195px; max-height: 150px; border-radius: 7px; display: block; object-fit: cover; border: 1px solid var(--border); }
+
+.card-close {
+  position: absolute; top: 5px; right: 5px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; opacity: 0; transition: all 0.15s;
+  font-size: 9px; color: var(--text3); z-index: 2; line-height: 1;
+}
+.canvas-card:hover .card-close { opacity: 1; }
+.card-close:hover { background: rgba(248,113,113,0.2); border-color: rgba(248,113,113,0.4); color: #f87171; }
+
+.card-color-tag {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 2px; border-radius: 0 0 13px 13px; opacity: 0.55;
+}
+
+/* ═══ CANVAS TOOLBAR ═══ */
+#canvas-toolbar {
+  position: absolute; top: 14px; right: 14px;
+  display: flex; gap: 7px; z-index: 10;
+}
+.tool-btn {
+  padding: 6px 13px;
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  border: 1px solid var(--border2);
+  border-radius: 8px; color: var(--text2);
+  font-size: 11.5px; font-family: var(--font-mono);
+  cursor: pointer; backdrop-filter: blur(12px);
+  transition: all 0.18s; letter-spacing: 0.03em;
+}
+.tool-btn:hover { background: var(--surface2); color: var(--text); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+.tool-btn:active { transform: scale(0.97); }
+.tool-btn.danger:hover { border-color: rgba(248,113,113,0.4); color: #f87171; background: rgba(248,113,113,0.08); }
+.tool-btn.active-tool { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+#item-count {
+  position: absolute; bottom: 12px; right: 14px;
+  font-size: 10px; font-family: var(--font-mono);
+  color: var(--text3); letter-spacing: 0.05em; pointer-events: none;
+}
+
+/* ═══ MISC ═══ */
+#toast {
+  position: fixed; bottom: 22px; left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  border: 1px solid var(--border2); border-radius: 8px;
+  padding: 7px 15px; font-size: 11.5px;
+  font-family: var(--font-mono); color: var(--text2);
+  pointer-events: none; opacity: 0; transition: all 0.28s;
+  z-index: 9999; white-space: nowrap; backdrop-filter: blur(12px);
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+#drag-ghost {
+  position: fixed; pointer-events: none;
+  z-index: 9000; opacity: 0; transition: opacity 0.1s;
+  transform: rotate(4deg) scale(1.05);
+}
+#drag-ghost.visible { opacity: 0.88; }
+.ghost-inner {
+  padding: 9px 13px;
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  border-radius: 13px; backdrop-filter: blur(20px);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--text);
+  max-width: 190px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.ghost-inner img { max-width: 110px; max-height: 70px; border-radius: 5px; display: block; }
+
+#sidebar-drop-indicator {
+  position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  border: 2px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 200;
+}
+#sidebar-drop-indicator.active { opacity: 1; }
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes float1 { 0%,100%{transform:translate(0,0) rotate(0deg)} 25%{transform:translate(2px,-3px) rotate(.5deg)} 50%{transform:translate(-1px,-5px) rotate(-.3deg)} 75%{transform:translate(-3px,-2px) rotate(.4deg)} }
+@keyframes float2 { 0%,100%{transform:translate(0,0) rotate(0deg) scale(1)} 33%{transform:translate(-2px,3px) rotate(-.6deg) scale(1.005)} 66%{transform:translate(3px,2px) rotate(.4deg) scale(.998)} }
+@keyframes float3 { 0%,100%{transform:translate(0,0) rotate(0deg)} 20%{transform:translate(3px,2px) rotate(.7deg)} 60%{transform:translate(-2px,4px) rotate(-.5deg)} 80%{transform:translate(1px,-2px) rotate(.3deg)} }
+@keyframes drift1 { 0%,100%{transform:translate(0,0) rotate(0deg) scale(1)} 30%{transform:translate(4px,-4px) rotate(-1deg) scale(1.008)} 70%{transform:translate(-3px,-3px) rotate(.8deg) scale(.995)} }
+@keyframes drift2 { 0%,100%{transform:translate(0,0) rotate(0deg)} 40%{transform:translate(-4px,5px) rotate(1.2deg)} 80%{transform:translate(3px,2px) rotate(-.8deg)} }
+.anim-1{animation:float1 var(--dur,5s) ease-in-out infinite var(--delay,0s)}
+.anim-2{animation:float2 var(--dur,6.5s) ease-in-out infinite var(--delay,0s)}
+.anim-3{animation:float3 var(--dur,7.2s) ease-in-out infinite var(--delay,0s)}
+.anim-4{animation:drift1 var(--dur,8s) ease-in-out infinite var(--delay,0s)}
+.anim-5{animation:drift2 var(--dur,5.8s) ease-in-out infinite var(--delay,0s)}
+.canvas-card.dragging-card{animation:none!important}
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div id="sidebar-drop-indicator"></div>
+
+    <div id="sidebar-header">
+      <h1>Canvas<br>Playground</h1>
+      <p>drag · drop · create</p>
+    </div>
+
+    <div id="text-section">
+      <label class="section-label">Text Items</label>
+      <textarea id="text-input" placeholder="Type or paste text here&#10;Each line → one card&#10;&#10;Ctrl+Enter to add all"></textarea>
+      <div id="text-actions">
+        <button class="btn btn-accent" onclick="addTextItems()">+ Add Lines</button>
+        <button class="btn" onclick="document.getElementById('text-input').value=''">Clear</button>
+      </div>
+    </div>
+
+    <div id="image-section">
+      <label class="section-label">Images</label>
+      <div id="image-drop-zone" onclick="document.getElementById('file-input').click()">
+        <div class="drop-icon">⬡</div>
+        <div>Drop images or click to upload</div>
+        <div style="font-size:10.5px;margin-top:2px;opacity:0.45;">folder select supported</div>
+      </div>
+      <input type="file" id="file-input" multiple accept="image/*">
+    </div>
+
+    <div id="sidebar-items"></div>
+
+    <div id="sidebar-footer">
+      <!-- Icon toolbar -->
+      <div id="icon-toolbar">
+        <!-- Animations toggle -->
+        <div class="icon-btn active" id="anim-btn" data-tip="Animations" onclick="toggleAnimations()">✦</div>
+        <!-- Grid toggle -->
+        <div class="icon-btn active" id="grid-btn" data-tip="Dot grid" onclick="toggleGrid()">⊞</div>
+        <!-- Arrange -->
+        <div class="icon-btn" data-tip="Auto arrange" onclick="autoArrange()">⊟</div>
+
+        <div class="icon-sep"></div>
+
+        <!-- Themes -->
+        <div style="display:flex;align-items:center;gap:5px;padding:0 2px;position:relative;">
+          <div class="theme-dot active" id="theme-dot-void"  data-tip="Void (dark)" onclick="setTheme('void')"></div>
+          <div class="theme-dot"        id="theme-dot-paper" data-tip="Paper (light)" onclick="setTheme('paper')"></div>
+          <div class="theme-dot"        id="theme-dot-mint"  data-tip="Mint (dark)" onclick="setTheme('mint')"></div>
+        </div>
+
+        <div class="icon-sep"></div>
+
+        <!-- Future slots (coming soon, visually present) -->
+        <div class="icon-btn" data-tip="Coming soon" style="opacity:0.3;cursor:default">⊕</div>
+        <div class="icon-btn" data-tip="Coming soon" style="opacity:0.3;cursor:default">≋</div>
+      </div>
+
+      <div id="footer-actions">
+        <button class="btn danger" onclick="clearAllCanvas()" style="flex:1">⊘ Clear Canvas</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORKSPACE -->
+  <div id="workspace">
+    <div id="canvas-bg"></div>
+    <div id="drop-hint">
+      <div class="hint-icon">⊕</div>
+      <p>drag items here<br>to place on canvas</p>
+    </div>
+    <div id="canvas-toolbar">
+      <button class="tool-btn" id="collapse-btn" onclick="toggleSidebar()">◧ Panel</button>
+      <button class="tool-btn" id="panels-btn" onclick="toggleInputPanels()">⊟ Inputs</button>
+      <button class="tool-btn" onclick="autoArrange()">⊞ Arrange</button>
+      <button class="tool-btn danger" onclick="clearAllCanvas()">⊘ Clear All</button>
+    </div>
+    <div id="item-count"></div>
+  </div>
+</div>
+
+<div id="drag-ghost"><div class="ghost-inner" id="ghost-content"></div></div>
+<div id="toast"></div>
+
+<!-- ═══ AMBIENT BG ═══ -->
+<script>
+(function(){
+  const cv=document.getElementById('bg-canvas');
+  const ctx=cv.getContext('2d');
+  let W,H,orbs=[];
+  function getOrbHues(){
+    const s=document.documentElement.dataset.theme||'void';
+    const map={void:[270,240,160,290,220],paper:[35,270,150,45,260],mint:[160,150,290,170,300]};
+    return map[s]||map.void;
+  }
+  function init(){
+    W=cv.width=window.innerWidth; H=cv.height=window.innerHeight;
+    const hues=getOrbHues();
+    orbs=hues.map((h,i)=>({
+      x:Math.random()*W, y:Math.random()*H,
+      r:180+Math.random()*280,
+      vx:(Math.random()-.5)*.16, vy:(Math.random()-.5)*.16,
+      hue:h, sat:55+Math.random()*25,
+      phase:Math.random()*Math.PI*2
+    }));
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const t=Date.now()*.001;
+    orbs.forEach(o=>{
+      o.x+=o.vx; o.y+=o.vy;
+      if(o.x<-o.r)o.x=W+o.r; if(o.x>W+o.r)o.x=-o.r;
+      if(o.y<-o.r)o.y=H+o.r; if(o.y>H+o.r)o.y=-o.r;
+      const p=0.038+0.018*Math.sin(t*.28+o.phase);
+      const g=ctx.createRadialGradient(o.x,o.y,0,o.x,o.y,o.r);
+      const theme=document.documentElement.dataset.theme||'void';
+      const lightness=theme==='paper'?45:65;
+      g.addColorStop(0,`hsla(${o.hue},${o.sat}%,${lightness}%,${p})`);
+      g.addColorStop(1,`hsla(${o.hue},${o.sat}%,${lightness-10}%,0)`);
+      ctx.beginPath(); ctx.arc(o.x,o.y,o.r,0,Math.PI*2);
+      ctx.fillStyle=g; ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',init);
+  window.reinitOrbs=init;
+  init(); draw();
+})();
+</script>
+
+<!-- ═══ MAIN APP ═══ -->
+<script>
+const STORAGE_KEY = 'canvas_playground_v4';
+const ANIM_CLASSES = ['anim-1','anim-2','anim-3','anim-4','anim-5'];
+const CARD_COLORS = [
+  'linear-gradient(90deg,#c084fc,#818cf8)',
+  'linear-gradient(90deg,#818cf8,#67e8f9)',
+  'linear-gradient(90deg,#34d399,#818cf8)',
+  'linear-gradient(90deg,#f9a8d4,#c084fc)',
+  'linear-gradient(90deg,#fcd34d,#f9a8d4)',
+  'linear-gradient(90deg,#67e8f9,#34d399)',
+];
+
+// ── IMAGE STORE: keeps full base64 in memory + IndexedDB, not localStorage ──
+const ImageStore = (() => {
+  const mem = {};
+  let db = null;
+
+  function openDB() {
+    return new Promise((res, rej) => {
+      if (db) return res(db);
+      const req = indexedDB.open('canvas_images', 1);
+      req.onupgradeneeded = e => e.target.result.createObjectStore('images');
+      req.onsuccess = e => { db = e.target.result; res(db); };
+      req.onerror = () => res(null); // fallback gracefully
+    });
+  }
+
+  async function put(id, dataUrl) {
+    mem[id] = dataUrl;
+    try {
+      const d = await openDB();
+      if (!d) return;
+      d.transaction('images','readwrite').objectStore('images').put(dataUrl, id);
+    } catch(e) {}
+  }
+
+  async function get(id) {
+    if (mem[id]) return mem[id];
+    try {
+      const d = await openDB();
+      if (!d) return null;
+      return new Promise(res => {
+        const req = d.transaction('images').objectStore('images').get(id);
+        req.onsuccess = () => { if(req.result) mem[id] = req.result; res(req.result || null); };
+        req.onerror = () => res(null);
+      });
+    } catch(e) { return null; }
+  }
+
+  async function del(id) {
+    delete mem[id];
+    try {
+      const d = await openDB();
+      if (!d) return;
+      d.transaction('images','readwrite').objectStore('images').delete(id);
+    } catch(e) {}
+  }
+
+  return { put, get, del };
+})();
+
+// Compress image to thumbnail for display (max 400px side, quality 0.7)
+function compressImage(dataUrl, maxPx = 400) {
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      res(c.toDataURL('image/jpeg', 0.72));
+    };
+    img.onerror = () => res(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+let state = { sidebarItems: [], canvasItems: [], animEnabled: true, gridEnabled: true, theme: 'void' };
+let isDragging = false;
+let dragSource = null;
+let dragOffsetX = 0, dragOffsetY = 0;
+let zCounter = 10;
+
+// ── LOAD / SAVE ──────────────────────────────────────────
+// State saved WITHOUT image data (images live in IndexedDB)
+function save() {
+  try {
+    const lean = {
+      ...state,
+      sidebarItems: state.sidebarItems.map(i => i.type === 'image' ? { ...i, value: '' } : i),
+      canvasItems: state.canvasItems.map(i => i.type === 'image' ? { ...i, value: '' } : i),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(lean));
+  } catch(e) {}
+}
+
+async function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) state = { ...state, ...JSON.parse(raw) };
+  } catch(e) {}
+
+  // Restore image data from IndexedDB
+  const all = [...state.sidebarItems, ...state.canvasItems];
+  await Promise.all(all.filter(i => i.type === 'image').map(async i => {
+    i.value = (await ImageStore.get(i.id)) || '';
+  }));
+
+  applyTheme(state.theme || 'void', false);
+  applyGrid(state.gridEnabled !== false);
+  // Restore toggle states
+  if (state.animEnabled === false) {
+    document.getElementById('anim-btn').classList.remove('active');
+  }
+  if (state.sidebarCollapsed) {
+    sidebarCollapsed = true;
+    document.getElementById('sidebar').classList.add('collapsed');
+    const btn = document.getElementById('collapse-btn');
+    if (btn) { btn.textContent = '▷ Panel'; btn.classList.add('active-tool'); }
+  }
+  if (state.inputsHidden) {
+    inputsHidden = true;
+    document.getElementById('text-section').classList.add('panel-hidden');
+    document.getElementById('image-section').classList.add('panel-hidden');
+    const btn = document.getElementById('panels-btn');
+    if (btn) { btn.textContent = '⊞ Inputs'; btn.classList.add('active-tool'); }
+  }
+  renderSidebar();
+  renderCanvas();
+  updateHint();
+  updateCount();
+}
+
+// ── THEME ────────────────────────────────────────────────
+function setTheme(t) {
+  state.theme = t; save();
+  applyTheme(t);
+}
+function applyTheme(t, animate = true) {
+  if (!animate) document.documentElement.style.transition = 'none';
+  document.documentElement.dataset.theme = t;
+  document.querySelectorAll('.theme-dot').forEach(d => d.classList.toggle('active', d.id === 'theme-dot-' + t));
+  if (!animate) requestAnimationFrame(() => document.documentElement.style.transition = '');
+  if (window.reinitOrbs) setTimeout(window.reinitOrbs, 50);
+}
+
+// ── GRID ─────────────────────────────────────────────────
+function toggleGrid() {
+  state.gridEnabled = !state.gridEnabled;
+  applyGrid(state.gridEnabled); save();
+}
+function applyGrid(on) {
+  document.getElementById('workspace').classList.toggle('no-grid', !on);
+  const btn = document.getElementById('grid-btn');
+  if (btn) btn.classList.toggle('active', on);
+}
+
+// ── SIDEBAR COLLAPSE ─────────────────────────────────────
+let sidebarCollapsed = false;
+function toggleSidebar() {
+  sidebarCollapsed = !sidebarCollapsed;
+  document.getElementById('sidebar').classList.toggle('collapsed', sidebarCollapsed);
+  const btn = document.getElementById('collapse-btn');
+  if (btn) btn.textContent = sidebarCollapsed ? '▷ Panel' : '◧ Panel';
+  if (btn) btn.classList.toggle('active-tool', sidebarCollapsed);
+  state.sidebarCollapsed = sidebarCollapsed; save();
+}
+
+let inputsHidden = false;
+function toggleInputPanels() {
+  inputsHidden = !inputsHidden;
+  document.getElementById('text-section').classList.toggle('panel-hidden', inputsHidden);
+  document.getElementById('image-section').classList.toggle('panel-hidden', inputsHidden);
+  const btn = document.getElementById('panels-btn');
+  if (btn) btn.textContent = inputsHidden ? '⊞ Inputs' : '⊟ Inputs';
+  if (btn) btn.classList.toggle('active-tool', inputsHidden);
+  state.inputsHidden = inputsHidden; save();
+}
+
+// ── SIDEBAR ITEMS ────────────────────────────────────────
+function addTextItems() {
+  const raw = document.getElementById('text-input').value;
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (!lines.length) { showToast('No text to add'); return; }
+  lines.forEach(text => state.sidebarItems.push({ id: uid(), type: 'text', value: text }));
+  save(); renderSidebar();
+  showToast(`${lines.length} item${lines.length > 1 ? 's' : ''} added`);
+}
+
+function removeSidebarItem(id) {
+  const item = state.sidebarItems.find(i => i.id === id);
+  if (item && item.type === 'image') ImageStore.del(id);
+  state.sidebarItems = state.sidebarItems.filter(i => i.id !== id);
+  save(); renderSidebar();
+}
+
+function renderSidebar() {
+  const container = document.getElementById('sidebar-items');
+  container.innerHTML = '';
+  if (!state.sidebarItems.length) {
+    const e = document.createElement('div');
+    e.style.cssText = 'color:var(--text3);font-size:11px;font-family:var(--font-mono);text-align:center;padding:18px 0;opacity:.5;letter-spacing:.04em';
+    e.textContent = '— no items yet —';
+    container.appendChild(e); return;
+  }
+  state.sidebarItems.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'sidebar-item';
+    el.dataset.id = item.id;
+
+    if (item.type === 'image') {
+      const img = document.createElement('img');
+      img.src = item.value || ''; img.className = 'item-thumb';
+      el.appendChild(img);
+    } else {
+      const dot = document.createElement('div'); dot.className = 'item-dot';
+      el.appendChild(dot);
+    }
+    const label = document.createElement('div');
+    label.className = 'item-label';
+    label.textContent = item.type === 'image' ? (item.name || 'image') : item.value;
+    el.appendChild(label);
+
+    const rm = document.createElement('div'); rm.className = 'item-remove'; rm.textContent = '✕';
+    rm.onclick = e => { e.stopPropagation(); removeSidebarItem(item.id); };
+    el.appendChild(rm);
+
+    el.addEventListener('mousedown', e => startSidebarDrag(e, item));
+    container.appendChild(el);
+  });
+}
+
+// ── IMAGE UPLOAD ─────────────────────────────────────────
+document.getElementById('file-input').addEventListener('change', function(e) {
+  handleFiles(Array.from(e.target.files)); this.value = '';
+});
+const dz = document.getElementById('image-drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); handleFiles(Array.from(e.dataTransfer.files)); });
+
+async function handleFiles(files) {
+  const imgs = files.filter(f => f.type.startsWith('image/'));
+  if (!imgs.length) { showToast('No image files'); return; }
+  showToast(`Processing ${imgs.length} image${imgs.length>1?'s':''}…`);
+  let done = 0;
+  for (const file of imgs) {
+    const raw = await readFile(file);
+    // Compress to thumbnail for display (keeps performance fast)
+    const thumb = await compressImage(raw, 380);
+    const id = uid();
+    await ImageStore.put(id, thumb); // store compressed version
+    state.sidebarItems.push({ id, type: 'image', value: thumb, name: file.name });
+    done++;
+    if (done === imgs.length) { save(); renderSidebar(); showToast(`${done} image${done>1?'s':''} added`); }
+  }
+}
+
+function readFile(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = () => rej(new Error('Read failed'));
+    r.readAsDataURL(file);
+  });
+}
+
+// ── CANVAS RENDERING ─────────────────────────────────────
+function renderCanvas() {
+  document.querySelectorAll('.canvas-card').forEach(el => el.remove());
+  state.canvasItems.forEach(item => createCardEl(item));
+  updateHint(); updateCount();
+}
+
+function createCardEl(item) {
+  const ws = document.getElementById('workspace');
+  const card = document.createElement('div');
+  card.className = 'canvas-card';
+  card.dataset.id = item.id;
+  card.style.left = item.x + 'px'; card.style.top = item.y + 'px';
+  card.style.zIndex = item.z || zCounter++;
+  if (zCounter <= (item.z || 0)) zCounter = (item.z || 0) + 1;
+
+  if (state.animEnabled !== false) {
+    const ac = ANIM_CLASSES[Math.floor(Math.random() * ANIM_CLASSES.length)];
+    card.classList.add(ac);
+    card.style.setProperty('--dur', (4.5 + Math.random() * 5).toFixed(1) + 's');
+    card.style.setProperty('--delay', -(Math.random() * 8).toFixed(1) + 's');
+  }
+
+  const inner = document.createElement('div'); inner.className = 'card-inner';
+
+  const close = document.createElement('div'); close.className = 'card-close'; close.textContent = '✕';
+  close.onclick = e => { e.stopPropagation(); removeCanvasCard(item.id); };
+  inner.appendChild(close);
+
+  if (item.type === 'image') {
+    const img = document.createElement('img');
+    img.className = 'card-image';
+    // Use stored value (already compressed thumbnail)
+    img.src = item.value || '';
+    img.loading = 'lazy'; // lazy decode
+    img.decoding = 'async';
+    inner.appendChild(img);
+  } else {
+    const txt = document.createElement('div'); txt.className = 'card-text'; txt.textContent = item.value;
+    inner.appendChild(txt);
+  }
+
+  const tag = document.createElement('div'); tag.className = 'card-color-tag';
+  tag.style.background = CARD_COLORS[Math.abs(hashCode(item.value || item.id)) % CARD_COLORS.length];
+  inner.appendChild(tag);
+
+  card.appendChild(inner);
+  ws.appendChild(card);
+  card.addEventListener('mousedown', e => startCanvasDrag(e, card, item));
+  return card;
+}
+
+function hashCode(str) { let h=0; for(let i=0;i<Math.min(str.length,50);i++) h=(Math.imul(31,h)+str.charCodeAt(i))|0; return h; }
+
+function removeCanvasCard(id) {
+  const el = document.querySelector(`.canvas-card[data-id="${id}"]`);
+  if (el) { el.style.transition='opacity .2s,transform .2s'; el.style.opacity='0'; el.style.transform+=' scale(.85)'; setTimeout(()=>el.remove(),220); }
+  state.canvasItems = state.canvasItems.filter(i => i.id !== id);
+  save(); updateHint(); updateCount();
+}
+
+function updateHint() {
+  const h = document.getElementById('drop-hint');
+  h.style.opacity = state.canvasItems.length ? '0' : '1';
+}
+function updateCount() {
+  const n = state.canvasItems.length;
+  document.getElementById('item-count').textContent = n ? `${n} item${n>1?'s':''} on canvas` : '';
+}
+
+// ── DRAG & DROP ──────────────────────────────────────────
+let ghostEl, ghostContent;
+const SIDEBAR_W = 310;
+
+function startSidebarDrag(e, item) {
+  if (e.button !== 0) return; e.preventDefault();
+  isDragging = true; dragSource = { type: 'sidebar', item };
+  ghostEl = document.getElementById('drag-ghost');
+  ghostContent = document.getElementById('ghost-content');
+  ghostContent.innerHTML = '';
+  if (item.type === 'image') {
+    const img = document.createElement('img'); img.src = item.value; ghostContent.appendChild(img);
+  } else {
+    ghostContent.textContent = item.value.substring(0,38) + (item.value.length>38?'…':'');
+  }
+  ghostEl.style.left=(e.clientX-50)+'px'; ghostEl.style.top=(e.clientY-20)+'px';
+  ghostEl.classList.add('visible');
+}
+
+function startCanvasDrag(e, cardEl, item) {
+  if (e.button !== 0) return; e.preventDefault();
+  isDragging = true; dragSource = { type: 'canvas', item, el: cardEl };
+  const rect = cardEl.getBoundingClientRect();
+  dragOffsetX = e.clientX - rect.left; dragOffsetY = e.clientY - rect.top;
+  cardEl.classList.add('dragging-card');
+  cardEl.style.zIndex = ++zCounter;
+  document.getElementById('drag-ghost').classList.remove('visible');
+}
+
+document.addEventListener('mousemove', e => {
+  if (!isDragging || !dragSource) return;
+  if (dragSource.type === 'sidebar') {
+    ghostEl.style.left=(e.clientX-50)+'px'; ghostEl.style.top=(e.clientY-20)+'px';
+    const over = e.clientX < SIDEBAR_W;
+    document.getElementById('sidebar-drop-indicator').classList.toggle('active', over);
+  } else {
+    const ws = document.getElementById('workspace');
+    const r = ws.getBoundingClientRect();
+    dragSource.el.style.left = (e.clientX - r.left - dragOffsetX) + 'px';
+    dragSource.el.style.top  = (e.clientY - r.top  - dragOffsetY) + 'px';
+    document.getElementById('sidebar-drop-indicator').classList.toggle('active', e.clientX < SIDEBAR_W);
+  }
+});
+
+document.addEventListener('mouseup', e => {
+  if (!isDragging) return; isDragging = false;
+  document.getElementById('sidebar-drop-indicator').classList.remove('active');
+
+  if (dragSource.type === 'sidebar') {
+    ghostEl.classList.remove('visible');
+    if (e.clientX > SIDEBAR_W) {
+      const ws = document.getElementById('workspace');
+      const r = ws.getBoundingClientRect();
+      const newItem = { ...dragSource.item, id: uid(), x: Math.max(0, e.clientX - r.left - 60), y: Math.max(0, e.clientY - r.top - 24), z: ++zCounter };
+      state.canvasItems.push(newItem);
+      save();
+      const el = createCardEl(newItem);
+      el.style.opacity='0'; el.style.transform='scale(0.8)'; el.style.transition='opacity .25s,transform .25s';
+      requestAnimationFrame(()=>{ el.style.opacity='1'; el.style.transform=''; setTimeout(()=>{ if(el) el.style.transition=''; },300); });
+      updateHint(); updateCount();
+    }
+  } else {
+    dragSource.el.classList.remove('dragging-card');
+    if (e.clientX < SIDEBAR_W) {
+      const srcItem = state.canvasItems.find(i => i.id === dragSource.item.id);
+      if (srcItem) state.sidebarItems.push({ id: uid(), type: srcItem.type, value: srcItem.value, name: srcItem.name });
+      removeCanvasCard(dragSource.item.id);
+      renderSidebar();
+      showToast('Returned to sidebar');
+    } else {
+      const idx = state.canvasItems.findIndex(i => i.id === dragSource.item.id);
+      if (idx >= 0) {
+        state.canvasItems[idx].x = parseFloat(dragSource.el.style.left);
+        state.canvasItems[idx].y = parseFloat(dragSource.el.style.top);
+        state.canvasItems[idx].z = parseInt(dragSource.el.style.zIndex);
+      }
+      save();
+    }
+  }
+  dragSource = null;
+});
+
+// ── ACTIONS ──────────────────────────────────────────────
+function clearAllCanvas() {
+  if (!state.canvasItems.length) { showToast('Canvas already empty'); return; }
+  document.querySelectorAll('.canvas-card').forEach(el => {
+    el.style.transition='opacity .3s,transform .3s'; el.style.opacity='0'; el.style.transform+=' scale(.8)';
+  });
+  setTimeout(() => { state.canvasItems=[]; save(); renderCanvas(); showToast('Canvas cleared'); }, 330);
+}
+
+function autoArrange() {
+  if (!state.canvasItems.length) return;
+  const ws = document.getElementById('workspace');
+  const W = ws.offsetWidth - 260, H = ws.offsetHeight - 140;
+  const cols = Math.ceil(Math.sqrt(state.canvasItems.length * 1.4));
+  const cellW = Math.floor(W / cols), cellH = Math.floor(H / Math.ceil(state.canvasItems.length / cols));
+  state.canvasItems.forEach((item, i) => {
+    const col = i % cols, row = Math.floor(i / cols);
+    item.x = 40 + col * cellW + Math.random() * 16 - 8;
+    item.y = 50 + row * cellH + Math.random() * 16 - 8;
+    const el = document.querySelector(`.canvas-card[data-id="${item.id}"]`);
+    if (el) {
+      el.style.transition='left .45s cubic-bezier(.34,1.56,.64,1),top .45s cubic-bezier(.34,1.56,.64,1)';
+      el.style.left=item.x+'px'; el.style.top=item.y+'px';
+      setTimeout(()=>{ if(el) el.style.transition=''; },500);
+    }
+  });
+  save(); showToast('Cards arranged');
+}
+
+function toggleAnimations() {
+  state.animEnabled = !state.animEnabled; save();
+  document.getElementById('anim-btn').classList.toggle('active', state.animEnabled);
+  renderCanvas();
+  showToast(state.animEnabled ? 'Animations on' : 'Animations off');
+}
+
+// ── TOAST ────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── UTILS ────────────────────────────────────────────────
+function uid() { return Math.random().toString(36).slice(2,9) + Date.now().toString(36); }
+
+document.getElementById('text-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); addTextItems(); }
+});
+
+load();
+</script>
+</body>
+</html>
